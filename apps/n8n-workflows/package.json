@@ -1,0 +1,6 @@
+{
+  "name": "@job-app/n8n-workflows",
+  "version": "1.0.0",
+  "private": true,
+  "description": "n8n workflow definitions and exports"
+}

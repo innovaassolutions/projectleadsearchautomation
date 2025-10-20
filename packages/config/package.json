@@ -1,0 +1,8 @@
+{
+  "name": "@job-app/config",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "description": "Shared configuration"
+}

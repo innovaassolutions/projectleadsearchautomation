@@ -1,0 +1,8 @@
+{
+  "name": "@job-app/database",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "migrate": "node scripts/migrate.js"
+  }
+}
