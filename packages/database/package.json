@@ -2,7 +2,12 @@
   "name": "@job-app/database",
   "version": "1.0.0",
   "private": true,
+  "description": "Database migrations and schema for job application system",
   "scripts": {
-    "migrate": "node scripts/migrate.js"
+    "migrate": "node scripts/run-migrations.js",
+    "migrate:down": "node scripts/rollback-migration.js"
+  },
+  "dependencies": {
+    "pg": "^8.11.0"
   }
 }

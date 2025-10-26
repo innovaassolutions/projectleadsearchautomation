@@ -8,6 +8,12 @@
   ],
   "scripts": {
     "dev": "npm run dev --workspace=apps/web",
+    "dev:infra": "docker-compose up -d",
+    "dev:infra:down": "docker-compose down",
+    "dev:infra:logs": "docker-compose logs -f",
+    "dev:infra:restart": "docker-compose restart",
+    "dev:infra:clean": "docker-compose down -v",
+    "health": "bash scripts/health-check.sh",
     "build": "npm run build --workspaces",
     "db:migrate": "npm run migrate --workspace=packages/database"
   },

@@ -1,0 +1,20 @@
+# PostgreSQL with pgvector extension for Railway deployment
+# Based on official PostgreSQL 15 image with pgvector extension
+
+FROM pgvector/pgvector:pg17
+
+# Set environment variables for PostgreSQL
+ENV POSTGRES_DB=railway
+ENV POSTGRES_USER=postgres
+ENV POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+
+# Install additional extensions
+RUN apt-get update && apt-get install -y \
+    postgresql-17-pg-trgm \
+    && rm -rf /var/lib/apt/lists/*
+
+# Expose PostgreSQL port
+EXPOSE 5432
+
+# Use the default PostgreSQL entrypoint
+CMD ["postgres"]
