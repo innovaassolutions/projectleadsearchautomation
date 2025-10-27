@@ -1,0 +1,85 @@
+{
+  "name": "Hello World Test",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "35717a52-bdbb-4f82-bb4d-a4f46f3360c4",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "8cd21228-c04b-4516-94e8-95f585af9d7c",
+      "name": "Webhook",
+      "webhookId": "35717a52-bdbb-4f82-bb4d-a4f46f3360c4"
+    },
+    {
+      "parameters": {
+        "url": "https://api.github.com/zen",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "a3127831-c70d-4073-8c32-7c0b27f81056",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"message\": \"Hello World\",\n  \"github_zen\": \"{{ $json.data }}\",\n  \"timestamp\": \"{{ $now }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        416,
+        0
+      ],
+      "id": "b9c3581f-aaa3-4c73-a7fd-908994929ed3",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "e994ca68-e81b-41ee-8147-471ac84df565",
+  "meta": {
+    "instanceId": "58187461f17bd3f79e43723b102f6c97a3a8e374ebde04c3da66dbf62c282bef"
+  },
+  "id": "d3ySL3PzaU1h0I8E",
+  "tags": []
+}
