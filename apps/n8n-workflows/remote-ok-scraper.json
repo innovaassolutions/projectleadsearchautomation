@@ -1,0 +1,277 @@
+{
+  "name": "JobSeacher",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * *"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0],
+      "id": "cron-trigger",
+      "name": "Daily Trigger"
+    },
+    {
+      "parameters": {
+        "url": "https://remoteok.com/api",
+        "options": {
+          "timeout": 30000,
+          "retry": {
+            "enabled": true,
+            "maxRetries": 3,
+            "waitBetweenRetries": 2000
+          }
+        },
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "JobApp-Scraper/1.0"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [220, 0],
+      "id": "fetch-api",
+      "name": "Fetch Remote OK API"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Remote OK returns array with first item as metadata - skip it\nconst jobs = $input.all()[0].json.filter((item, index) => index > 0 && item.position);\n\n// Transform to match our database schema\nconst transformedJobs = jobs.map(job => ({\n  title: job.position || 'Untitled',\n  company: job.company || 'Unknown',\n  url: job.url || '',\n  description: job.description || '',\n  location: job.location || 'Worldwide',\n  source: 'remote_ok',\n  tags: Array.isArray(job.tags) ? job.tags : [],\n  salary_min: job.salary_min || null,\n  salary_max: job.salary_max || null,\n  scraped_at: new Date().toISOString(),\n  is_archived: false\n}));\n\n// Filter out jobs without URLs (can't deduplicate)\nconst validJobs = transformedJobs.filter(job => job.url && job.url.length > 0);\n\nconsole.log(`Parsed ${validJobs.length} valid jobs from Remote OK`);\n\nreturn validJobs.map(job => ({ json: job }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 0],
+      "id": "parse-transform",
+      "name": "Parse and Transform"
+    },
+    {
+      "parameters": {
+        "batchSize": 10,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [660, 0],
+      "id": "split-batches",
+      "name": "Split In Batches"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT COUNT(*) as count FROM jobs WHERE url = $1",
+        "options": {
+          "queryReplacement": "={{ $json.url }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [880, 0],
+      "id": "check-duplicate",
+      "name": "Check Duplicate",
+      "credentials": {
+        "postgres": {
+          "id": "local-postgres",
+          "name": "Local PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.count }}",
+              "value2": "0"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1100, 0],
+      "id": "if-not-duplicate",
+      "name": "Is New Job?"
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "schema": {
+          "schema": [
+            {
+              "column": "title",
+              "value": "={{ $json.title }}"
+            },
+            {
+              "column": "company",
+              "value": "={{ $json.company }}"
+            },
+            {
+              "column": "url",
+              "value": "={{ $json.url }}"
+            },
+            {
+              "column": "description",
+              "value": "={{ $json.description }}"
+            },
+            {
+              "column": "location",
+              "value": "={{ $json.location }}"
+            },
+            {
+              "column": "source",
+              "value": "remote_ok"
+            },
+            {
+              "column": "tags",
+              "value": "={{ JSON.stringify($json.tags) }}"
+            },
+            {
+              "column": "salary_min",
+              "value": "={{ $json.salary_min }}"
+            },
+            {
+              "column": "salary_max",
+              "value": "={{ $json.salary_max }}"
+            },
+            {
+              "column": "scraped_at",
+              "value": "={{ $json.scraped_at }}"
+            },
+            {
+              "column": "is_archived",
+              "value": "false"
+            }
+          ]
+        },
+        "table": "jobs",
+        "options": {
+          "returnFields": "id"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [1320, -100],
+      "id": "insert-job",
+      "name": "Insert Job",
+      "credentials": {
+        "postgres": {
+          "id": "local-postgres",
+          "name": "Local PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const allItems = $input.all();\n\nconst stats = {\n  total_fetched: allItems.length,\n  jobs_inserted: allItems.filter(item => item.json.id).length,\n  duplicates_skipped: allItems.filter(item => !item.json.id).length,\n  timestamp: new Date().toISOString()\n};\n\nconsole.log('=== Remote OK Scraping Summary ===');\nconsole.log(`Total jobs fetched: ${stats.total_fetched}`);\nconsole.log(`New jobs inserted: ${stats.jobs_inserted}`);\nconsole.log(`Duplicates skipped: ${stats.duplicates_skipped}`);\n\nreturn [{ json: stats }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1540, 0],
+      "id": "log-stats",
+      "name": "Log Statistics"
+    }
+  ],
+  "connections": {
+    "Daily Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch Remote OK API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Remote OK API": {
+      "main": [
+        [
+          {
+            "node": "Parse and Transform",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse and Transform": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split In Batches": {
+      "main": [
+        [
+          {
+            "node": "Check Duplicate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Duplicate": {
+      "main": [
+        [
+          {
+            "node": "Is New Job?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is New Job?": {
+      "main": [
+        [
+          {
+            "node": "Insert Job",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Statistics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Job": {
+      "main": [
+        [
+          {
+            "node": "Log Statistics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
+  
