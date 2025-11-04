@@ -15,10 +15,21 @@
     "dev:infra:clean": "docker-compose down -v",
     "health": "bash scripts/health-check.sh",
     "build": "npm run build --workspaces",
-    "db:migrate": "npm run migrate --workspace=packages/database"
+    "db:migrate": "npm run migrate --workspace=packages/database",
+    "deploy:n8n": "tsx scripts/deploy-n8n-workflow.ts",
+    "deploy:n8n:dry-run": "tsx scripts/deploy-n8n-workflow.ts --dry-run",
+    "deploy:workflow": "tsx scripts/deploy-n8n-workflow.ts",
+    "deploy:remote-ok": "npm run deploy:workflow -- apps/n8n-workflows/remote-ok-scraper.json",
+    "setup:n8n-creds": "tsx scripts/setup-n8n-credentials.ts"
   },
   "engines": {
     "node": ">=20.0.0",
     "npm": ">=10.0.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.6"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3"
   }
 }
