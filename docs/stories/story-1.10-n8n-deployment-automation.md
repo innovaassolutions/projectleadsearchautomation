@@ -543,15 +543,23 @@ This story addresses a foundational infrastructure gap (CI/CD automation) that s
 
 ### Test Results
 
-**GitHub Actions Run:** [19090046523](https://github.com/innovaassolutions/projectleadsearchautomation/actions/runs/19090046523)
-- **Status:** ✅ Success
+**GitHub Actions Runs:**
+1. [19090046523](https://github.com/innovaassolutions/projectleadsearchautomation/actions/runs/19090046523) - Initial deployment with API key fix
+2. [19090499199](https://github.com/innovaassolutions/projectleadsearchautomation/actions/runs/19090499199) - Schema fix deployment
+
+**Final Status:** ✅ Success
 - **Workflows Deployed:** 1 (remote-ok-scraper.json)
-- **Action:** Updated existing workflow (ID: nsygPoqnOjnNBPjE)
+- **Workflow ID:** nsygPoqnOjnNBPjE
+- **Manual Test Execution:** ✅ Verified working in Railway n8n UI
+- **Database Integration:** ✅ Jobs successfully scraped and stored in PostgreSQL
 
 **Verification:**
 ```
 ✅ Successful: 1
    - JobSeacher (updated)
+   - Manual execution tested and working
+   - PostgreSQL credential configured
+   - Jobs table populated with data
 ```
 
 ### File List
@@ -559,7 +567,7 @@ This story addresses a foundational infrastructure gap (CI/CD automation) that s
 **Modified Files:**
 - `scripts/deploy-n8n-workflow.ts` - Improved error handling, removed unsupported fields
 - `apps/n8n-workflows/README.md` - Added troubleshooting and automated deployment docs
-- `apps/n8n-workflows/remote-ok-scraper.json` - Test deployment trigger
+- `apps/n8n-workflows/remote-ok-scraper.json` - Fixed schema to match database structure
 
 **Removed Files:**
 - `apps/n8n-workflows/hello-world.json` - Test workflow no longer needed
@@ -572,9 +580,12 @@ This story addresses a foundational infrastructure gap (CI/CD automation) that s
 
 - 2025-11-05: Fixed N8N_API_KEY authentication issue
 - 2025-11-05: Improved deployment script error handling for API limitations
-- 2025-11-05: Removed test workflow file
+- 2025-11-05: Removed test workflow file (hello-world.json)
 - 2025-11-05: Updated documentation with troubleshooting guidance
 - 2025-11-05: Verified automated GitHub Actions deployment working
+- 2025-11-05: Fixed workflow schema to match database (removed location, salary fields)
+- 2025-11-05: Configured PostgreSQL credential "Local PostgreSQL" in Railway n8n UI
+- 2025-11-05: Successfully tested workflow execution - jobs scraped and stored
 
 ### Debug Log References
 
@@ -582,6 +593,8 @@ This story addresses a foundational infrastructure gap (CI/CD automation) that s
 1. **AUTH-001:** "Unauthorized" errors - Fixed by regenerating N8N_API_KEY in Railway n8n UI
 2. **DEPLOY-002:** "must NOT have additional properties" - Fixed by stripping `staticData` and `pinData` from API requests
 3. **ACTIVATE-001:** "Method Not Allowed" on activation - Made non-blocking with graceful fallback
+4. **SCHEMA-001:** "No columns found in Postgres" - Fixed workflow schema to match database (removed location, salary_min, salary_max)
+5. **CRED-001:** Credential name mismatch - Renamed credential from "Postgres account" to "Local PostgreSQL"
 
 ### Completion Notes
 
@@ -598,9 +611,10 @@ This story addresses a foundational infrastructure gap (CI/CD automation) that s
 - [x] Documentation updated (setup guide, troubleshooting)
 - [ ] QA gate review requested
 
-**Manual Steps Required:**
-1. Activate deployed workflows in Railway n8n UI (toggle Active switch)
-2. Configure PostgreSQL credential "Railway PostgreSQL" in n8n UI with Railway environment variables
+**Manual Steps Completed:**
+1. ✅ Configured PostgreSQL credential "Local PostgreSQL" in Railway n8n UI
+2. ✅ Tested workflow execution manually in n8n UI
+3. ⚠️ Workflow activation still requires manual toggle (API limitation)
 
 **Recommendations for Future Stories:**
 - All workflow deployments (Stories 2.2-2.5) will automatically deploy via GitHub Actions
