@@ -274,7 +274,8 @@
     "executionOrder": "v1"
   },
   "meta": {
-    "instanceId": "auto-deployed"
+    "instanceId": "auto-deployed",
+    "version": "1.0.0"
   }
 }
   
