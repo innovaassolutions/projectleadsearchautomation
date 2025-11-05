@@ -76,23 +76,30 @@ const DEPLOY_ALL = args.includes('--all') || nonFlagArgs.length === 0;
 /**
  * Activate a workflow
  */
-async function activateWorkflow(workflowId: string): Promise<void> {
+async function activateWorkflow(workflowId: string): Promise<boolean> {
   if (DRY_RUN) {
     console.log(`🔍 [DRY-RUN] Would activate workflow: ${workflowId}`);
-    return;
+    return true;
   }
 
-  const response = await fetch(`${N8N_URL}/api/v1/workflows/${workflowId}`, {
-    method: 'PATCH',
-    headers: {
-      'X-N8N-API-KEY': N8N_API_KEY!,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ active: true }),
-  });
+  try {
+    const response = await fetch(`${N8N_URL}/api/v1/workflows/${workflowId}`, {
+      method: 'PATCH',
+      headers: {
+        'X-N8N-API-KEY': N8N_API_KEY!,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ active: true }),
+    });
 
-  if (!response.ok) {
-    throw new Error(`Failed to activate workflow: ${response.statusText}`);
+    if (!response.ok) {
+      console.warn(`⚠️  Could not auto-activate workflow (${response.statusText}). Please activate manually in n8n UI.`);
+      return false;
+    }
+    return true;
+  } catch (error: any) {
+    console.warn(`⚠️  Could not auto-activate workflow: ${error.message}. Please activate manually in n8n UI.`);
+    return false;
   }
 }
 
@@ -149,9 +156,13 @@ async function deployWorkflowFile(workflowPath: string): Promise<DeploymentResul
 
     // Activate the workflow
     console.log(`⚡ Activating workflow...`);
-    await activateWorkflow(workflowId);
+    const activated = await activateWorkflow(workflowId);
 
-    console.log(`✅ Workflow ${action} and activated successfully!`);
+    if (activated) {
+      console.log(`✅ Workflow ${action} and activated successfully!`);
+    } else {
+      console.log(`✅ Workflow ${action} successfully! (activation requires manual step in n8n UI)`);
+    }
     console.log(`   ID: ${workflowId}`);
 
     return {
@@ -390,8 +401,8 @@ async function findWorkflowByName(name: string): Promise<N8nApiResponse | null> 
 }
 
 async function createWorkflow(workflow: N8nWorkflow): Promise<N8nApiResponse> {
-  // Remove read-only fields that can't be set via API
-  const { id, versionId, meta, tags, active, ...workflowData } = workflow;
+  // Remove read-only fields and problematic fields that can't be set via API
+  const { id, versionId, meta, tags, active, staticData, pinData, ...workflowData } = workflow;
 
   const response = await fetch(`${N8N_URL}/api/v1/workflows`, {
     method: 'POST',
@@ -414,8 +425,8 @@ async function updateWorkflow(
   workflowId: string,
   workflow: N8nWorkflow
 ): Promise<N8nApiResponse> {
-  // Remove read-only fields that can't be set via API
-  const { id, versionId, meta, tags, active, ...workflowData } = workflow;
+  // Remove read-only fields and problematic fields that can't be set via API
+  const { id, versionId, meta, tags, active, staticData, pinData, ...workflowData } = workflow;
 
   const response = await fetch(`${N8N_URL}/api/v1/workflows/${workflowId}`, {
     method: 'PUT',
